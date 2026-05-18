@@ -21,8 +21,10 @@ function page1(config) {
   const rightVW = SIDE_PAD_L + maxDepthRight + SIDE_PAD_R;
   const sumVW   = mainVW + leftVW + rightVW;
 
-  // Row height and CSS widths so every SVG fills its container at the same height
-  const rowH   = (DRAW_W - SIDE_GAP) * VH / sumVW;
+  // Row height and CSS widths so every SVG fills its container at the same height.
+  // Cap at 270mm so very tall cabinets don't overflow the A3 body (297 − 11 header − 8 footer = 278mm).
+  const MAX_ROW_H = 270;
+  const rowH   = Math.min((DRAW_W - SIDE_GAP) * VH / sumVW, MAX_ROW_H);
   const wMain  = rowH * mainVW  / VH;
   const wLeft  = rowH * leftVW  / VH;
   const wRight = rowH * rightVW / VH;

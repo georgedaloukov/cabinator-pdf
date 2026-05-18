@@ -112,8 +112,12 @@ function renderInteriorPartitions(m, H) {
     } else if (p.type === 'drawerSet') {
       out += renderDrawerSet(px, py, p.widthMM, p.heightMM, p.drawersOptions);
     } else if (p.type === 'led') {
-      // Orange outline/groove on the splashback interior
-      out += rect(px, py, p.widthMM, p.heightMM, 'none', C.ledColor, 4);
+      // Draw only the sides specified in ledSides as orange lines
+      const ledSides = p.ledSides || ['top'];
+      if (ledSides.includes('top'))    out += line(px, py,                    px + p.widthMM, py,                    C.ledColor, 5);
+      if (ledSides.includes('bottom')) out += line(px, py + p.heightMM,       px + p.widthMM, py + p.heightMM,       C.ledColor, 5);
+      if (ledSides.includes('left'))   out += line(px, py,                    px,             py + p.heightMM,       C.ledColor, 5);
+      if (ledSides.includes('right'))  out += line(px + p.widthMM, py,        px + p.widthMM, py + p.heightMM,       C.ledColor, 5);
     }
   }
   return out;
@@ -241,6 +245,23 @@ function doorGraphicFlapUp(x, y, w, h) {
   `;
 }
 
+function doorGraphicDouble(x, y, w, h) {
+  // Two doors hinged at outer edges, meeting at centre — X / diamond pattern
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const topY = y + h * 0.08;
+  const botY = y + h * 0.92;
+  const lx  = x + w * 0.04;
+  const rx  = x + w * 0.96;
+  const o = doorLineOpts();
+  return `
+    <line x1="${lx}" y1="${topY}" x2="${cx}" y2="${cy}" ${o}/>
+    <line x1="${lx}" y1="${botY}" x2="${cx}" y2="${cy}" ${o}/>
+    <line x1="${rx}" y1="${topY}" x2="${cx}" y2="${cy}" ${o}/>
+    <line x1="${rx}" y1="${botY}" x2="${cx}" y2="${cy}" ${o}/>
+  `;
+}
+
 function renderDoorFronts(m, x, y, w, h, H) {
   if (m.type !== 'corpus') return renderModuleBase(m, x, y, w, h);
 
@@ -269,6 +290,8 @@ function renderDoorFronts(m, x, y, w, h, H) {
       out += doorGraphicSingleRight(dx, dy, dw, dh);
     } else if (d.type === 'flap-up') {
       out += doorGraphicFlapUp(dx, dy, dw, dh);
+    } else if (d.type === 'double') {
+      out += doorGraphicDouble(dx, dy, dw, dh);
     }
   }
 

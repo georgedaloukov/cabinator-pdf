@@ -86,7 +86,8 @@ function getColumnProfile(modules, totalWidth) {
 
   const col = [];
   for (const m of modules) {
-    if (m.type === 'panel') continue;
+    // Skip structural side panels (used as edge references) but keep front/decorative panels
+    if (m.type === 'panel' && m.orientation === 'side') continue;
 
     const touchesEdge = isLeft
       ? Math.abs(m.x - edgeX) <= 2
@@ -99,6 +100,8 @@ function getColumnProfile(modules, totalWidth) {
 
   return col.sort((a, b) => a.y - b.y);
 }
+
+
 
 // Summarise per-module interior fittings for sidebar
 function describeInteriors(modules) {
@@ -144,6 +147,7 @@ function describeDoors(modules) {
         'single-right': 'Single-right',
         'flap-up': 'Flap-up',
         'fixed-panel': 'Fixed panel',
+        'double': 'Double',
       }[d.type] || d.type;
       parts.push(`${label} · ${d.widthMM}×${d.heightMM}`);
     }
@@ -174,6 +178,7 @@ function buildBOM(config) {
           'single-right': 'Single-Right',
           'flap-up': 'Flap-Up',
           'fixed-panel': 'Fixed Panel',
+          'double': 'Double',
         }[d.type] || d.type)).join(' + ');
 
     const internalsDesc = (() => {
