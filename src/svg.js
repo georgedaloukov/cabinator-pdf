@@ -58,8 +58,10 @@ function renderModuleBase(m, x, y, w, h) {
       out += line(x + led.x, ledY, x + led.x + led.widthMM, ledY, C.ledColor, 5);
     }
   } else {
-    // corpus
-    out += rect(x, y, w, h, C.corpusFill, C.corpusStroke, 3);
+    // corpus — draw shell + interior cavity so 18mm walls read as solid panels
+    const t = m.moduleThicknessMM || 18;
+    out += rect(x, y, w, h, C.corpusFill, C.corpusStroke, 2);
+    out += rect(x + t, y + t, w - 2 * t, h - 2 * t, C.pageBg, 'none', 0);
   }
 
   return out;
@@ -126,22 +128,36 @@ function renderInteriorPartitions(m, H) {
 function renderInteriorDimensions(m, H) {
   const parts    = m.partitions || [];
   const shelves  = parts.filter(p => p.type === 'shelf').sort((a, b) => a.y - b.y);
-  const dividers = parts.filter(p => p.type === 'verticalDivider').sort((a, b) => a.x - b.x);
-
-  if (!shelves.length && !dividers.length) return '';
+  // All dividers for column building; only full-height ones (≥70% of module) for width annotations
+  const dividers     = parts.filter(p => p.type === 'verticalDivider').sort((a, b) => a.x - b.x);
+  const fullDividers = dividers.filter(d => d.heightMM >= m.heightMM * 0.7);
 
   const mLeft   = AL + m.x;
   const mBottom = AT + H - m.y;
 
-  let out = '';
   const DIM_FS   = 26;
   const DIM_TICK = 10;
   const MIN_GAP  = 30;
 
-  // Build columns from divider positions
+  // No shelves or full-height dividers — if the module has drawers show a single total interior height dim
+  if (!shelves.length && !fullDividers.length) {
+    const hasDrawers = parts.some(p => p.type === 'drawerSet');
+    if (!hasDrawers) return '';
+    const t        = m.moduleThicknessMM || 18;
+    const interiorH = m.heightMM - 2 * t;
+    if (interiorH < MIN_GAP) return '';
+    const svgTop    = AT + H - m.y - m.heightMM + t;
+    const svgBottom = AT + H - m.y - t;
+    const dimX      = mLeft + m.widthMM - 30;
+    return dimV(svgTop, svgBottom, dimX, `${interiorH}`, { fs: DIM_FS, tickLen: DIM_TICK });
+  }
+
+  let out = '';
+
+  // Build columns from full-height dividers only
   const cols = [];
   let prevX = 0;
-  for (const d of dividers) {
+  for (const d of fullDividers) {
     cols.push({ left: prevX, right: d.x });
     prevX = d.x + d.widthMM;
   }
@@ -168,14 +184,28 @@ function renderInteriorDimensions(m, H) {
     }
   }
 
-  // Horizontal dims at the bottom of the module
-  if (dividers.length) {
-    const xs   = [0, ...dividers.flatMap(d => [d.x, d.x + d.widthMM]), m.widthMM];
+  // Horizontal dims at the bottom — only from full-height dividers
+  if (fullDividers.length) {
+    const xs   = [0, ...fullDividers.flatMap(d => [d.x, d.x + d.widthMM]), m.widthMM];
     const dimY = mBottom - 40;
     for (let i = 0; i < xs.length - 1; i += 2) {
       const clearW = xs[i + 1] - xs[i];
       if (clearW < MIN_GAP) continue;
       out += dimH(mLeft + xs[i], mLeft + xs[i + 1], dimY, `${clearW}`, { fs: DIM_FS, tickLen: DIM_TICK });
+    }
+  }
+
+  // Width dims for partial dividers — annotated at the divider's own vertical level
+  const partialDividers = dividers.filter(d => !fullDividers.includes(d));
+  for (const pd of partialDividers) {
+    // Find the parent column this partial divider lives inside
+    const col = cols.find(c => pd.x >= c.left && pd.x + pd.widthMM <= c.right);
+    if (!col) continue;
+    const dimY = mBottom - pd.y - 40;  // 40mm above the divider's bottom edge
+    for (const [x1, x2] of [[col.left, pd.x], [pd.x + pd.widthMM, col.right]]) {
+      const clearW = x2 - x1;
+      if (clearW < MIN_GAP) continue;
+      out += dimH(mLeft + x1, mLeft + x2, dimY, `${clearW}`, { fs: DIM_FS, tickLen: DIM_TICK });
     }
   }
 
@@ -195,8 +225,15 @@ function renderDoorDimensions(m, H) {
     const dTop    = AT + H - d.y - d.heightMM;
     const dBottom = AT + H - d.y;
 
-    // Width at the bottom of each door
-    out += dimH(dx, dx + d.widthMM, dBottom - 40, `${d.widthMM}`, { fs: DIM_FS, tickLen: DIM_TICK });
+    // Width at the bottom — double doors get two half-width dims
+    if (d.type === 'double') {
+      const half = d.widthMM / 2;
+      const dmx  = dx + half;
+      out += dimH(dx,  dmx,           dBottom - 40, `${half}`,       { fs: DIM_FS, tickLen: DIM_TICK });
+      out += dimH(dmx, dx + d.widthMM, dBottom - 40, `${half}`,      { fs: DIM_FS, tickLen: DIM_TICK });
+    } else {
+      out += dimH(dx, dx + d.widthMM, dBottom - 40, `${d.widthMM}`, { fs: DIM_FS, tickLen: DIM_TICK });
+    }
 
     // Height near the right edge of each door
     out += dimV(dTop, dBottom, dx + d.widthMM - 30, `${d.heightMM}`, { fs: DIM_FS, tickLen: DIM_TICK });
@@ -246,36 +283,44 @@ function doorGraphicFlapUp(x, y, w, h) {
 }
 
 function doorGraphicDouble(x, y, w, h) {
-  // Two doors hinged at outer edges, meeting at centre — X / diamond pattern
-  const cx = x + w / 2;
-  const cy = y + h / 2;
-  const topY = y + h * 0.08;
-  const botY = y + h * 0.92;
-  const lx  = x + w * 0.04;
-  const rx  = x + w * 0.96;
+  // Two doors hinged at outer edges — triangles pointing inward with a centre split line
+  const cy    = y + h * 0.5;
+  const topY  = y + h * 0.08;
+  const botY  = y + h * 0.92;
+  const cx    = x + w * 0.5;
+  const lEdge = x + w * 0.04;
+  const rEdge = x + w * 0.96;
+  const lApex = x + w * 0.45;
+  const rApex = x + w * 0.55;
   const o = doorLineOpts();
   return `
-    <line x1="${lx}" y1="${topY}" x2="${cx}" y2="${cy}" ${o}/>
-    <line x1="${lx}" y1="${botY}" x2="${cx}" y2="${cy}" ${o}/>
-    <line x1="${rx}" y1="${topY}" x2="${cx}" y2="${cy}" ${o}/>
-    <line x1="${rx}" y1="${botY}" x2="${cx}" y2="${cy}" ${o}/>
+    <line x1="${lEdge}" y1="${topY}" x2="${lApex}" y2="${cy}" ${o}/>
+    <line x1="${lEdge}" y1="${botY}" x2="${lApex}" y2="${cy}" ${o}/>
+    <line x1="${rEdge}" y1="${topY}" x2="${rApex}" y2="${cy}" ${o}/>
+    <line x1="${rEdge}" y1="${botY}" x2="${rApex}" y2="${cy}" ${o}/>
+    <line x1="${cx}" y1="${y}" x2="${cx}" y2="${y + h}" stroke="${C.corpusStroke}" stroke-width="1.5" stroke-dasharray="6,4" ${NS}/>
   `;
 }
 
 function renderDoorFronts(m, x, y, w, h, H) {
   if (m.type !== 'corpus') return renderModuleBase(m, x, y, w, h);
 
+  const t = m.moduleThicknessMM || 18;
   const doors = m.doors || [];
+
+  // Shell + light interior (same for all corpus on doors page)
+  let out = rect(x, y, w, h, C.corpusWallFill, C.corpusStroke, 2);
+  out += rect(x + t, y + t, w - 2 * t, h - 2 * t, C.corpusFill, 'none', 0);
+
   if (doors.length === 0) {
-    // Open module — white with "open" label
-    let out = rect(x, y, w, h, C.corpusFill, C.corpusStroke, 3);
     out += text(x + w / 2, y + h / 2 + 20, 'open', 55, C.textMuted, 'middle');
     return out;
   }
 
-  // Corpus background (dark)
-  let out = rect(x, y, w, h, C.doorFill, C.corpusStroke, 3);
+  // Render interior partitions so shelves/dividers show through in open areas
+  out += renderInteriorPartitions(m, H);
 
+  // Fill each door area dark and draw its graphic — open areas stay light
   for (const d of doors) {
     const dx = AL + d.x;
     const dy = AT + H - d.y - d.heightMM;
@@ -284,14 +329,12 @@ function renderDoorFronts(m, x, y, w, h, H) {
 
     if (d.type === 'fixed-panel') {
       out += rect(dx, dy, dw, dh, C.fixedPanelFill, 'none', 0);
-    } else if (d.type === 'single-left') {
-      out += doorGraphicSingleLeft(dx, dy, dw, dh);
-    } else if (d.type === 'single-right') {
-      out += doorGraphicSingleRight(dx, dy, dw, dh);
-    } else if (d.type === 'flap-up') {
-      out += doorGraphicFlapUp(dx, dy, dw, dh);
-    } else if (d.type === 'double') {
-      out += doorGraphicDouble(dx, dy, dw, dh);
+    } else {
+      out += rect(dx, dy, dw, dh, C.doorFill, 'none', 0);
+      if (d.type === 'single-left')  out += doorGraphicSingleLeft(dx, dy, dw, dh);
+      else if (d.type === 'single-right') out += doorGraphicSingleRight(dx, dy, dw, dh);
+      else if (d.type === 'flap-up')      out += doorGraphicFlapUp(dx, dy, dw, dh);
+      else if (d.type === 'double')       out += doorGraphicDouble(dx, dy, dw, dh);
     }
   }
 
@@ -368,8 +411,20 @@ function renderDimensions(config) {
     d += dimV(pTop, AT + H, zoneX, `${plinthHeight}`, { fs: 28, tickLen: 10 });
   }
 
-  // Lower zone (above plinth to countertop)
-  if (lowerZoneTop > plinthHeight) {
+  // Lower zone — if multiple corpus modules are stacked, show each height individually;
+  // otherwise show the combined lower zone height
+  const stackedCorpus = modules
+    .filter(m => m.type === 'corpus' && m.y < lowerZoneTop)
+    .sort((a, b) => a.y - b.y);
+
+  if (stackedCorpus.length > 1) {
+    for (const m of stackedCorpus) {
+      if (m.heightMM < 50) continue;
+      const svgTop    = AT + H - m.y - m.heightMM;
+      const svgBottom = AT + H - m.y;
+      d += dimV(svgTop, svgBottom, zoneX, `${m.heightMM}`, { fs: 28, tickLen: 10 });
+    }
+  } else if (lowerZoneTop > plinthHeight) {
     const lBot = AT + H - plinthHeight;
     const lTop = AT + H - lowerZoneTop;
     d += dimV(lTop, lBot, zoneX, `${lowerZoneTop - plinthHeight}`, { fs: 28, tickLen: 10 });
@@ -491,7 +546,10 @@ function elevationSVG(config, mode = 'modules') {
     } else if (mode === 'interiors') {
       // Draw base then overlay interior elements
       if (m.type === 'corpus') {
-        bodies += rect(x, y, w, h, C.corpusFill, C.corpusStroke, 3);
+        const t = m.moduleThicknessMM || 18;
+        // Outer shell in wall colour, interior cavity in page bg — contrast makes 18mm panels read clearly
+        bodies += rect(x, y, w, h, C.corpusWallFill, C.corpusStroke, 2);
+        bodies += rect(x + t, y + t, w - 2 * t, h - 2 * t, C.pageBg, 'none', 0);
         bodies += renderInteriorPartitions(m, H);
         bodies += renderInteriorDimensions(m, H);
       } else {

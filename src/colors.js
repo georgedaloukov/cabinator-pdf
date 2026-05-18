@@ -9,6 +9,7 @@ const C = {
 
   // Module fills
   corpusFill: '#FAFAF8',
+  corpusWallFill: '#D8D5CE',  // interior wall panels — distinct from cavity so 18mm thickness reads clearly
   corpusStroke: '#1B1917',
   countertopFill: '#C8A978',
   splashbackFill: '#C6A876',
