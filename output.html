@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cabinator · Island</title>
+  <style>
+    
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Mono:ital,wght@0,400;0,500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @page { size: A3 landscape; margin: 0; }
+
+  html, body {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 10px;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 420mm;
+    height: 297mm;
+    background: #F5F4F0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    page-break-after: always;
+  }
+  .page:last-child { page-break-after: auto; }
+
+  .page-header {
+    background: #1B1917;
+    color: #FFFFFF;
+    height: 11mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6mm;
+    flex-shrink: 0;
+  }
+  .hdr-left { display: flex; flex-direction: column; gap: 1px; }
+  .brand { font-size: 8.5px; font-weight: 600; letter-spacing: 0.08em; color: #E07B39; }
+  .hdr-sub { font-size: 7px; color: #888; letter-spacing: 0.02em; }
+  .hdr-center { font-size: 13px; font-weight: 300; letter-spacing: 0.04em; }
+  .hdr-center strong { font-weight: 600; }
+  .hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+  .hdr-dims { font-size: 8.5px; color: #E07B39; font-weight: 500; }
+  .hdr-page { font-size: 7px; color: #888; }
+
+  .page-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .page-footer {
+    background: #1B1917;
+    color: #7A7875;
+    height: 8mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6mm;
+    font-size: 7px;
+    flex-shrink: 0;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 49mm;
+    background: #fff;
+    border-right: 0.3mm solid #E8E4DC;
+    padding: 4mm 4mm 4mm 5mm;
+    display: flex;
+    flex-direction: column;
+    gap: 4mm;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .sidebar-section { display: flex; flex-direction: column; gap: 1.5mm; }
+  .sidebar-section + .sidebar-section {
+    border-top: 0.25mm solid #E8E4DC;
+    padding-top: 4mm;
+  }
+  .section-title {
+    font-size: 7.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: #9A9895;
+    text-transform: uppercase;
+    margin-bottom: 0.5mm;
+  }
+  .kv { display: flex; flex-direction: column; gap: 0.3mm; }
+  .kv-key { font-size: 8px; color: #9A9895; }
+  .kv-val { font-size: 10.5px; font-weight: 500; color: #1B1917; }
+
+  /* Legend */
+  .legend-item { display: flex; align-items: center; gap: 2mm; margin-bottom: 1mm; }
+  .swatch {
+    width: 8px; height: 8px; border: 0.5px solid rgba(0,0,0,0.15); flex-shrink: 0;
+  }
+  .sw-corpus   { background: #FAFAF8; border-color: #1B1917; }
+  .sw-countertop { background: #C8A978; }
+  .sw-splashback { background: #C6A876; }
+  .sw-panel    { background: #DEDAD3; }
+  .sw-plinth   { background: #1B1917; }
+  .sw-led      { background: #E07B39; border: none; }
+  .sw-shelf    { background: #8A8783; border: none; }
+  .sw-drawer   { background: #3A3835; border: none; }
+  .sw-divider  { background: #8A8783; border: none; }
+  .legend-item span { font-size: 9px; color: #1B1917; }
+
+  /* Material entries */
+  .mat-item { margin-bottom: 2mm; display: flex; align-items: flex-start; gap: 2mm; }
+  .mat-dot  { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .mat-text { display: flex; flex-direction: column; gap: 0.5mm; }
+  .mat-label { font-size: 8px; color: #9A9895; }
+  .mat-name  { font-size: 9.5px; font-weight: 500; color: #1B1917; }
+
+  /* Schedule lists (pages 2 & 3) */
+  .schedule-list { display: flex; flex-direction: column; gap: 2mm; max-height: 120mm; overflow: hidden; }
+  .schedule-item { }
+  .schedule-item .s-name { font-size: 9px; color: #E07B39; font-weight: 600; }
+  .schedule-item .s-desc { font-size: 9px; color: #1B1917; }
+
+  .thickness-list { display: flex; flex-direction: column; gap: 1.5mm; }
+  .thickness-item .t-key { font-size: 8px; color: #9A9895; }
+  .thickness-item .t-val { font-size: 10px; font-weight: 500; color: #1B1917; }
+
+  /* Drawing area */
+  .drawing-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 3mm 3mm 3mm 2mm;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .drawing-label {
+    font-size: 6.5px; color: #9A9895; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 2mm; font-weight: 500;
+  }
+  .elevation-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: stretch;
+  }
+  .elevation-wrap svg { width: 100%; height: 100%; }
+
+  /* Side views (page 1) — width set inline from page1.js based on computed proportions */
+  .side-views {
+    display: flex;
+    flex-direction: row;
+    gap: 2mm;
+    padding-left: 2mm;
+    flex-shrink: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .side-view-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .side-view-label {
+    font-size: 6px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #fff; font-weight: 500; margin-bottom: 1mm;
+    background: #1B1917; padding: 1.5mm 2mm;
+    flex-shrink: 0;
+  }
+  .side-view-svg { flex: 1; min-height: 0; overflow: hidden; }
+  .side-view-svg svg { width: 100%; height: 100%; }
+
+  /* Main drawing row (page 1 has side views) */
+  .drawing-row {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    gap: 0;
+  }
+
+    
+  /* BOM table */
+  .bom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8px;
+    margin-bottom: 5mm;
+  }
+  .bom-table thead tr {
+    background: #1B1917;
+    color: #fff;
+  }
+  .bom-table th {
+    padding: 2.5mm 3mm;
+    text-align: left;
+    font-weight: 500;
+    font-size: 7px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .bom-table td {
+    padding: 2mm 3mm;
+    font-size: 8px;
+    border-bottom: 0.25mm solid #E8E4DC;
+    color: #1B1917;
+    vertical-align: middle;
+  }
+  .bom-table tfoot td {
+    background: #1B1917;
+    color: #666;
+    font-size: 7px;
+    padding: 2mm 3mm;
+    border: none;
+  }
+
+  /* BOM bottom panels */
+  .bom-bottom {
+    display: flex;
+    gap: 6mm;
+    margin-top: 4mm;
+  }
+  .bom-box {
+    flex: 1;
+    border: 0.25mm solid #E8E4DC;
+    padding: 3mm 4mm;
+  }
+  .bom-box-title {
+    font-size: 6px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #9A9895;
+    margin-bottom: 2.5mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 0.25mm solid #E8E4DC;
+  }
+  .mat-table { border-collapse: collapse; width: 100%; }
+  .mat-table td { padding: 1mm 0; font-size: 8px; }
+  .mt-key { color: #9A9895; width: 45%; font-size: 7.5px; }
+  .mt-val { color: #1B1917; font-weight: 500; }
+
+  .cfg-notes { display: flex; flex-direction: column; gap: 1.5mm; }
+  .cfg-notes div { font-size: 8px; color: #1B1917; }
+
+  </style>
+</head>
+<body>
+  
+  <div class="page">
+    
+  <div class="page-header">
+    <div class="hdr-left">
+      <span class="brand">CABINATOR</span>
+      <span class="hdr-sub">Production Documentation · Island</span>
+    </div>
+    <div class="hdr-center">1 — <strong>Module Overview</strong></div>
+    <div class="hdr-right">
+      <span class="hdr-dims">1400 × 900 mm</span>
+      <span class="hdr-page">PAGE 1 / 4</span>
+    </div>
+  </div>
+    <div class="page-body">
+      
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Wall Summary</div>
+      <div class="kv"><div class="kv-key">Total Width</div><div class="kv-val">1400 mm</div></div>
+      <div class="kv"><div class="kv-key">Total Height</div><div class="kv-val">900 mm</div></div>
+      <div class="kv"><div class="kv-key">Base Depth</div><div class="kv-val">580 mm</div></div>
+      
+      <div class="kv"><div class="kv-key">Countertop height</div><div class="kv-val">880 mm</div></div>
+      
+      <div class="kv"><div class="kv-key">Config</div><div class="kv-val">Floor standing</div></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Type Legend</div>
+      <div class="legend-item"><div class="swatch sw-corpus"></div><span>Corpus</span></div>
+      <div class="legend-item"><div class="swatch sw-countertop"></div><span>Countertop</span></div>
+      <div class="legend-item"><div class="swatch sw-splashback"></div><span>Splashback</span></div>
+      <div class="legend-item"><div class="swatch sw-panel"></div><span>Side panel</span></div>
+      <div class="legend-item"><div class="swatch sw-plinth"></div><span>Plinth</span></div>
+      <div class="legend-item"><div class="swatch sw-led" style="width:16px;height:4px;border-radius:1px;"></div><span>LED strip</span></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Materials</div>
+      <div class="mat-item">
+        <span class="mat-dot" style="background:#E07B39"></span>
+        <div class="mat-text"><span class="mat-label">Corpus</span><span class="mat-name">Kronospan melamine</span></div>
+      </div>
+      <div class="mat-item">
+        <span class="mat-dot" style="background:#E07B39"></span>
+        <div class="mat-text"><span class="mat-label">Side panels</span><span class="mat-name">MDF & Walnut Veneer</span></div>
+      </div>
+      
+      <div class="mat-item">
+        <span class="mat-dot" style="background:#E07B39"></span>
+        <div class="mat-text"><span class="mat-label">Worktop</span><span class="mat-name">Quartzforms Terrazzo</span></div>
+      </div>
+      
+    </div>
+  </div>
+      <div class="drawing-area">
+        <div class="drawing-row" style="height:127.8mm; flex:none; overflow:hidden;">
+          <div class="side-view-block" style="width:184.6mm; flex:none;">
+            <div class="side-view-label">Front Face</div>
+            <div class="side-view-svg"><svg viewBox="0 0 1615 1118" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+    <rect x="185" y="70" width="1400" height="900" fill="none" stroke="#E8E4DC" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <rect x="224" y="890" width="671" height="80" fill="#1B1917" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><rect x="914" y="890" width="671" height="80" fill="#1B1917" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><rect x="205" y="90" width="19" height="880" fill="#DEDAD3" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="895" y="90" width="19" height="880" fill="#DEDAD3" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="185" y="70" width="1400" height="20" fill="#C8A978" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="185" y="90" width="20" height="880" fill="#C8A978" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="224" y="90" width="671" height="800" fill="#FAFAF8" stroke="#1B1917" stroke-width="3" vector-effect="non-scaling-stroke" /><rect x="914" y="90" width="671" height="800" fill="#FAFAF8" stroke="#1B1917" stroke-width="3" vector-effect="non-scaling-stroke" />
+    
+    <rect x="233" y="899" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="240" y="929.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M3</text>
+  
+    <rect x="923" y="899" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="930" y="929.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M5</text>
+  
+    <rect x="214" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="221" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M2</text>
+  
+    <rect x="904" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="911" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M4</text>
+  
+    <rect x="194" y="79" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="201" y="109.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M1</text>
+  
+    <rect x="194" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="201" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M0</text>
+  
+    <rect x="233" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="240" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M6</text>
+  
+    <rect x="923" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="930" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M7</text>
+  
+    <line x1="185" y1="1018" x2="1585" y2="1018" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><line x1="185" y1="1013" x2="185" y2="1023" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><line x1="205" y1="1013" x2="205" y2="1023" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><text x="195" y="1006" font-size="22" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >20</text><line x1="205" y1="1013" x2="205" y2="1023" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><line x1="224" y1="1013" x2="224" y2="1023" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><text x="214.5" y="1006" font-size="22" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >19</text><line x1="224" y1="1011" x2="224" y2="1025" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><line x1="895" y1="1011" x2="895" y2="1025" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><text x="559.5" y="1006" font-size="30" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >671</text><line x1="895" y1="1013" x2="895" y2="1023" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><line x1="914" y1="1013" x2="914" y2="1023" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><text x="904.5" y="1006" font-size="22" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >19</text><line x1="914" y1="1011" x2="914" y2="1025" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><line x1="1585" y1="1011" x2="1585" y2="1025" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" /><text x="1249.5" y="1006" font-size="30" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >671</text>
+    <line x1="185" y1="1075" x2="1585" y2="1075" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="185" y1="1066" x2="185" y2="1084" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="1585" y1="1066" x2="1585" y2="1084" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="885" y="1065" font-size="42" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >1400 mm</text>
+  
+    <line x1="55" y1="70" x2="55" y2="970" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="46" y1="70" x2="64" y2="70" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="46" y1="970" x2="64" y2="970" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="43" y="520" font-size="42" fill="#E07B39" font-family="'DM Mono', monospace"
+      text-anchor="middle" transform="rotate(-90,43,520)">900 mm</text>
+  
+    <line x1="120" y1="890" x2="120" y2="970" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="115" y1="890" x2="125" y2="890" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="115" y1="970" x2="125" y2="970" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="108" y="930" font-size="28" fill="#E07B39" font-family="'DM Mono', monospace"
+      text-anchor="middle" transform="rotate(-90,108,930)">80</text>
+  
+    <line x1="120" y1="90" x2="120" y2="890" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="115" y1="90" x2="125" y2="90" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="115" y1="890" x2="125" y2="890" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="108" y="490" font-size="28" fill="#E07B39" font-family="'DM Mono', monospace"
+      text-anchor="middle" transform="rotate(-90,108,490)">800</text>
+  
+    <line x1="224" y1="40" x2="1585" y2="40" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="224" y1="31" x2="224" y2="49" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="1585" y1="31" x2="1585" y2="49" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="904.5" y="30" font-size="34" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >1361 mm · tall zone</text>
+  
+  </svg></div>
+          </div>
+          <div class="side-views" style="width:181.4mm;">
+            <div class="side-view-block" style="width:71.4mm; flex:none;">
+              <div class="side-view-label">A · Left Face</div>
+              <div class="side-view-svg"><svg viewBox="0 0 625 1118" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+    <rect x="15" y="890" width="550" height="80" fill="#1B1917" stroke="none" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="15" y="90" width="580" height="800" fill="#FAFAF8" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" />
+    <line x1="15" y1="1075" x2="595" y2="1075" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="15" y1="1066" x2="15" y2="1084" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="595" y1="1066" x2="595" y2="1084" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="305" y="1065" font-size="42" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >580 mm</text>
+  
+  </svg></div>
+            </div>
+            <div class="side-view-block" style="width:108.0mm; flex:none;">
+              <div class="side-view-label">B · Right Face</div>
+              <div class="side-view-svg"><svg viewBox="0 0 945 1118" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+    <rect x="15" y="890" width="550" height="80" fill="#1B1917" stroke="none" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="15" y="90" width="580" height="800" fill="#FAFAF8" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="15" y="70" width="900" height="20" fill="#C8A978" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" />
+    <line x1="15" y1="1075" x2="915" y2="1075" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="15" y1="1066" x2="15" y2="1084" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="915" y1="1066" x2="915" y2="1084" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="465" y="1065" font-size="42" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >900 mm</text>
+  
+    <line x1="15" y1="40" x2="595" y2="40" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="15" y1="31" x2="15" y2="49" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="595" y1="31" x2="595" y2="49" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="305" y="30" font-size="34" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >580 mm</text>
+  
+  </svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  <div class="page-footer">
+    <span>Cabinator · Island · Production Documentation Set</span>
+    <span>15/05/2026</span>
+  </div>
+  </div>
+
+  <div class="page">
+    
+  <div class="page-header">
+    <div class="hdr-left">
+      <span class="brand">CABINATOR</span>
+      <span class="hdr-sub">Production Documentation · Island</span>
+    </div>
+    <div class="hdr-center">2 — <strong>Interiors</strong></div>
+    <div class="hdr-right">
+      <span class="hdr-dims">1400 × 900 mm</span>
+      <span class="hdr-page">PAGE 2 / 4</span>
+    </div>
+  </div>
+    <div class="page-body">
+      
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Interior Fittings</div>
+      <div class="schedule-list">
+        
+          <div class="schedule-item">
+            <div class="s-name">M6</div>
+            <div class="s-desc">3× drawer (560mm pull)</div>
+          </div>
+          <div class="schedule-item">
+            <div class="s-name">M7</div>
+            <div class="s-desc">3× drawer (560mm pull)</div>
+          </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Fitting Legend</div>
+      <div class="legend-item"><div class="swatch sw-shelf" style="width:16px;height:5px;"></div><span>Shelf (18mm thick)</span></div>
+      <div class="legend-item"><div class="swatch sw-drawer"></div><span>Drawer set</span></div>
+      <div class="legend-item"><div class="swatch sw-divider" style="width:5px;height:12px;"></div><span>Vertical divider</span></div>
+      <div class="legend-item"><div class="swatch sw-led" style="width:16px;height:4px;border-radius:1px;"></div><span>LED groove (M9)</span></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Shelf Thickness</div>
+      <div class="thickness-list">
+        <div class="thickness-item">
+          <div class="t-key">Shelves</div>
+          <div class="t-val">19 mm</div>
+        </div>
+        <div class="thickness-item">
+          <div class="t-key">Backwall</div>
+          <div class="t-val">10 mm</div>
+        </div>
+        <div class="thickness-item">
+          <div class="t-key">Fronts</div>
+          <div class="t-val">19 mm</div>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="drawing-area">
+        <div class="drawing-label">Front Face · Interior View</div>
+        <div class="elevation-wrap">
+          <svg viewBox="0 0 1615 1118" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+    <rect x="185" y="70" width="1400" height="900" fill="none" stroke="#E8E4DC" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <rect x="224" y="890" width="671" height="80" fill="#1B1917" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><rect x="914" y="890" width="671" height="80" fill="#1B1917" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><rect x="205" y="90" width="19" height="880" fill="#DEDAD3" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="895" y="90" width="19" height="880" fill="#DEDAD3" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="185" y="70" width="1400" height="20" fill="#C8A978" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="185" y="90" width="20" height="880" fill="#C8A978" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="224" y="90" width="671" height="800" fill="#FAFAF8" stroke="#1B1917" stroke-width="3" vector-effect="non-scaling-stroke" /><rect x="242" y="108" width="635" height="764" fill="#3A3835" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><rect x="246" y="112" width="627" height="232" fill="#4E4B47" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><line x1="432.5" y1="228" x2="686.5" y2="228" stroke="#F5F4F0" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="246" y="374" width="627" height="232" fill="#4E4B47" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><line x1="432.5" y1="490" x2="686.5" y2="490" stroke="#F5F4F0" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="246" y="636" width="627" height="232" fill="#4E4B47" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><line x1="432.5" y1="752" x2="686.5" y2="752" stroke="#F5F4F0" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="914" y="90" width="671" height="800" fill="#FAFAF8" stroke="#1B1917" stroke-width="3" vector-effect="non-scaling-stroke" /><rect x="932" y="108" width="635" height="764" fill="#3A3835" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><rect x="936" y="112" width="627" height="232" fill="#4E4B47" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><line x1="1122.5" y1="228" x2="1376.5" y2="228" stroke="#F5F4F0" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="936" y="374" width="627" height="232" fill="#4E4B47" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><line x1="1122.5" y1="490" x2="1376.5" y2="490" stroke="#F5F4F0" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="936" y="636" width="627" height="232" fill="#4E4B47" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><line x1="1122.5" y1="752" x2="1376.5" y2="752" stroke="#F5F4F0" stroke-width="2" vector-effect="non-scaling-stroke" />
+    
+    <rect x="233" y="899" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="240" y="929.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M3</text>
+  
+    <rect x="923" y="899" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="930" y="929.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M5</text>
+  
+    <rect x="214" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="221" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M2</text>
+  
+    <rect x="904" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="911" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M4</text>
+  
+    <rect x="194" y="79" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="201" y="109.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M1</text>
+  
+    <rect x="194" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="201" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M0</text>
+  
+    <rect x="233" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="240" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M6</text>
+  
+    <rect x="923" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="930" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M7</text>
+  
+    
+    <line x1="185" y1="1020" x2="1585" y2="1020" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="185" y1="1011" x2="185" y2="1029" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="1585" y1="1011" x2="1585" y2="1029" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="885" y="1010" font-size="38" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >1400 mm</text>
+  
+  </svg>
+        </div>
+      </div>
+    </div>
+    
+  <div class="page-footer">
+    <span>Cabinator · Island · Production Documentation Set</span>
+    <span>15/05/2026</span>
+  </div>
+  </div>
+
+  <div class="page">
+    
+  <div class="page-header">
+    <div class="hdr-left">
+      <span class="brand">CABINATOR</span>
+      <span class="hdr-sub">Production Documentation · Island</span>
+    </div>
+    <div class="hdr-center">3 — <strong>Fronts & Doors</strong></div>
+    <div class="hdr-right">
+      <span class="hdr-dims">1400 × 900 mm</span>
+      <span class="hdr-page">PAGE 3 / 4</span>
+    </div>
+  </div>
+    <div class="page-body">
+      
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Door Schedule</div>
+      <div class="schedule-list">
+        
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Hardware</div>
+      <div class="kv"><div class="kv-key">Opening Mechanism</div><div class="kv-val">Grip profile (all)</div></div>
+      <div class="kv"><div class="kv-key">Fixed panels</div><div class="kv-val">No mechanism</div></div>
+      <div class="kv"><div class="kv-key">Front thickness</div><div class="kv-val">19 mm</div></div>
+      <div class="kv"><div class="kv-key">Material</div><div class="kv-val">MDF & Walnut Veneer</div></div>
+    </div>
+  </div>
+      <div class="drawing-area">
+        <div class="drawing-label">Front Face · Doors & Fronts</div>
+        <div class="elevation-wrap">
+          <svg viewBox="0 0 1615 1118" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+    <rect x="185" y="70" width="1400" height="900" fill="none" stroke="#E8E4DC" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <rect x="224" y="890" width="671" height="80" fill="#1B1917" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><rect x="914" y="890" width="671" height="80" fill="#1B1917" stroke="none" stroke-width="0" vector-effect="non-scaling-stroke" /><rect x="205" y="90" width="19" height="880" fill="#DEDAD3" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="895" y="90" width="19" height="880" fill="#DEDAD3" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="185" y="70" width="1400" height="20" fill="#C8A978" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="185" y="90" width="20" height="880" fill="#C8A978" stroke="#1B1917" stroke-width="2" vector-effect="non-scaling-stroke" /><rect x="224" y="90" width="671" height="800" fill="#FAFAF8" stroke="#1B1917" stroke-width="3" vector-effect="non-scaling-stroke" /><text x="559.5" y="510" font-size="55" fill="#9A9895" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >open</text><rect x="914" y="90" width="671" height="800" fill="#FAFAF8" stroke="#1B1917" stroke-width="3" vector-effect="non-scaling-stroke" /><text x="1249.5" y="510" font-size="55" fill="#9A9895" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >open</text>
+    
+    <rect x="233" y="899" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="240" y="929.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M3</text>
+  
+    <rect x="923" y="899" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="930" y="929.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M5</text>
+  
+    <rect x="214" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="221" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M2</text>
+  
+    <rect x="904" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="911" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M4</text>
+  
+    <rect x="194" y="79" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="201" y="109.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M1</text>
+  
+    <rect x="194" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="201" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M0</text>
+  
+    <rect x="233" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="240" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M6</text>
+  
+    <rect x="923" y="99" width="55" height="38.5" rx="3" fill="#1B1917" vector-effect="non-scaling-stroke"/>
+    <text x="930" y="129.5" font-size="28" fill="#FFFFFF" font-family="'DM Mono', monospace" font-weight="500" text-anchor="start" >M7</text>
+  
+    
+    <line x1="185" y1="1020" x2="1585" y2="1020" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="185" y1="1011" x2="185" y2="1029" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <line x1="1585" y1="1011" x2="1585" y2="1029" stroke="#E07B39" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+    <text x="885" y="1010" font-size="38" fill="#E07B39" font-family="'DM Mono', monospace" font-weight="normal" text-anchor="middle" >1400 mm</text>
+  
+  </svg>
+        </div>
+      </div>
+    </div>
+    
+  <div class="page-footer">
+    <span>Cabinator · Island · Production Documentation Set</span>
+    <span>15/05/2026</span>
+  </div>
+  </div>
+
+  <div class="page">
+    
+  <div class="page-header">
+    <div class="hdr-left">
+      <span class="brand">CABINATOR</span>
+      <span class="hdr-sub">Production Documentation · Island</span>
+    </div>
+    <div class="hdr-center">4 — <strong>Bill of Materials</strong></div>
+    <div class="hdr-right">
+      <span class="hdr-dims">1400 × 900 mm</span>
+      <span class="hdr-page">PAGE 4 / 4</span>
+    </div>
+  </div>
+    <div class="page-body" style="flex-direction:column;padding:5mm 6mm;">
+      <table class="bom-table">
+        <thead>
+          <tr>
+            <th>Module</th><th>Type</th><th>Width</th><th>Height</th><th>Depth</th>
+            <th>Doors / Fronts</th><th>Internals</th><th>Opening</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+    <tr style="background:#fff">
+      <td style="color:#E07B39;font-weight:600;">M0</td>
+      <td>Countertop</td>
+      <td>20 mm</td>
+      <td>880 mm</td>
+      <td>900 mm</td>
+      <td>None</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr style="background:#F7F6F2">
+      <td style="color:#E07B39;font-weight:600;">M1</td>
+      <td>Countertop</td>
+      <td>1400 mm</td>
+      <td>20 mm</td>
+      <td>900 mm</td>
+      <td>None</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr style="background:#fff">
+      <td style="color:#E07B39;font-weight:600;">M2</td>
+      <td>Panel</td>
+      <td>19 mm</td>
+      <td>880 mm</td>
+      <td>620 mm</td>
+      <td>None</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr style="background:#F7F6F2">
+      <td style="color:#E07B39;font-weight:600;">M3</td>
+      <td>Plinth</td>
+      <td>671 mm</td>
+      <td>80 mm</td>
+      <td>550 mm</td>
+      <td>None</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr style="background:#fff">
+      <td style="color:#E07B39;font-weight:600;">M4</td>
+      <td>Panel</td>
+      <td>19 mm</td>
+      <td>880 mm</td>
+      <td>620 mm</td>
+      <td>None</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr style="background:#F7F6F2">
+      <td style="color:#E07B39;font-weight:600;">M5</td>
+      <td>Plinth</td>
+      <td>671 mm</td>
+      <td>80 mm</td>
+      <td>550 mm</td>
+      <td>None</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr style="background:#fff">
+      <td style="color:#E07B39;font-weight:600;">M6</td>
+      <td>Corpus</td>
+      <td>671 mm</td>
+      <td>800 mm</td>
+      <td>580 mm</td>
+      <td>None</td>
+      <td>3× drawer (560mm pull)</td>
+      <td>—</td>
+    </tr>
+    <tr style="background:#F7F6F2">
+      <td style="color:#E07B39;font-weight:600;">M7</td>
+      <td>Corpus</td>
+      <td>671 mm</td>
+      <td>800 mm</td>
+      <td>580 mm</td>
+      <td>None</td>
+      <td>3× drawer (560mm pull)</td>
+      <td>—</td>
+    </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="8">8 items · Island production set</td>
+          </tr>
+        </tfoot>
+      </table>
+      
+    <div class="bom-bottom">
+      <div class="bom-box">
+        <div class="bom-box-title">Materials Specification</div>
+        <table class="mat-table">
+          <tr><td class="mt-key">Corpus:</td><td class="mt-val">Kronospan melamine</td></tr>
+          <tr><td class="mt-key">Fronts / Doors:</td><td class="mt-val">MDF & Walnut Veneer</td></tr>
+          <tr><td class="mt-key">Plinths:</td><td class="mt-val">MDF & Walnut Veneer</td></tr>
+          <tr><td class="mt-key">Shelves:</td><td class="mt-val">MDF & Walnut Veneer · 19mm</td></tr>
+          <tr><td class="mt-key">Countertop (M2):</td><td class="mt-val">Quartzforms Terrazzo</td></tr>
+          <tr><td class="mt-key">Backsplash (M9):</td><td class="mt-val">undefined</td></tr>
+        </table>
+      </div>
+      <div class="bom-box">
+        <div class="bom-box-title">Configuration Notes</div>
+        <div class="cfg-notes">
+          <div>Wall type: Floor standing</div>
+          <div>Backwall: 10mm, all corpus modules</div>
+          <div>Corpus thickness: 18mm throughout</div>
+          <div>Front thickness: 19mm throughout</div>
+          <div>Depth: 580mm</div>
+          
+        </div>
+      </div>
+    </div>
+    </div>
+    
+  <div class="page-footer">
+    <span>Cabinator · Island · Production Documentation Set</span>
+    <span>15/05/2026</span>
+  </div>
+  </div>
+</body>
+</html>
